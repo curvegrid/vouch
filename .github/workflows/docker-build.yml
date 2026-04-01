@@ -19,20 +19,21 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout local fork
+      - name: Checkout upstream tag
         uses: actions/checkout@v6
         with:
+          repository: attestantio/vouch
+          ref: refs/tags/${{ inputs.tag }}
           fetch-depth: 0
 
-      - name: Checkout upstream tag and merge multi-arch branch
+      - name: Fetch docker branch from fork
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add fork https://github.com/${{ github.repository }}.git
+          git fetch fork multi-arch-dockerfile
 
-          git remote add upstream https://github.com/attestantio/vouch.git
-          git fetch upstream --tags
-          git checkout -B docker-build-base "refs/tags/${{ inputs.tag }}"
-          git merge --no-edit origin/multi-arch-dockerfile
+      - name: Overlay docker files
+        run: |
+          git checkout FETCH_HEAD -- Dockerfile .dockerignore
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
